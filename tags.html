@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratório de Tags HTML</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#fff; --text:#1d2430; --muted:#667085; --line:#e3e6eb;
+    --accent:#2563eb; --block:#7c3aed; --inline:#059669;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#12151b; --panel:#1b2029; --text:#e6e9ef; --muted:#9aa4b2; --line:#2b3240; --accent:#60a5fa; --block:#a78bfa; --inline:#34d399; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column}
+  header{padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:1.15rem}
+  header p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
+  .layout{flex:1;display:flex;min-height:0}
+  aside{width:260px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  .tools{padding:10px;border-bottom:1px solid var(--line)}
+  .tools input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text)}
+  .filters{display:flex;gap:6px;margin-top:8px}
+  .filters button{flex:1;padding:5px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:6px;cursor:pointer;font-size:.8rem}
+  .filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  #list{overflow:auto;padding:8px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+  .tag{font-family:ui-monospace,Consolas,monospace;font-size:.85rem;padding:5px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer}
+  .tag.block{border-left:3px solid var(--block)}
+  .tag.inline{border-left:3px solid var(--inline)}
+  .tag.obsolete{opacity:.55;text-decoration:line-through}
+  .tag:hover{border-color:var(--accent)}
+  .tag.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  main{flex:1;overflow:auto;padding:20px;min-width:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .card h2{margin:0 0 6px;font-family:ui-monospace,Consolas,monospace}
+  .badge{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:99px;color:#fff;margin-left:8px;vertical-align:middle;font-family:system-ui}
+  .badge.block{background:var(--block)} .badge.inline{background:var(--inline)} .badge.old{background:#b45309}
+  .card p{margin:6px 0;line-height:1.5}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr} aside{width:200px}}
+  textarea{width:100%;height:260px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:.85rem;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);tab-size:2}
+  iframe{width:100%;height:260px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .row h3{margin:0;font-size:.95rem}
+  .reset{padding:4px 10px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:6px;cursor:pointer;font-size:.8rem}
+  .empty{color:var(--muted);text-align:center;margin-top:80px}
+  code.k{background:var(--bg);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Tags HTML</h1>
+  <p>Escolhe uma tag à esquerda, lê o que faz e altera o código para ver o resultado em direto.</p>
+</header>
+<div class="layout">
+  <aside>
+    <div class="tools">
+      <input id="q" type="search" placeholder="Procurar tag (ex.: div, table)…" autocomplete="off">
+      <div class="filters">
+        <button data-f="all" class="on">Todas</button>
+        <button data-f="block">Bloco</button>
+        <button data-f="inline">Inline</button>
+      </div>
+    </div>
+    <div id="list"></div>
+  </aside>
+  <main id="main">
+    <div class="empty">
+      <h2>👈 Escolhe uma tag</h2>
+      <p>Elementos de <b style="color:var(--block)">bloco</b> ocupam a largura toda e começam numa linha nova.<br>
+      Elementos <b style="color:var(--inline)">inline</b> ocupam só o espaço do conteúdo e ficam na mesma linha.</p>
+    </div>
+  </main>
+</div>
+
+<script>
+const svg = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="#60a5fa"/><circle cx="60" cy="40" r="22" fill="#fde68a"/></svg>');
+
+// t: 'b' = bloco, 'i' = inline | old = obsoleto
+const TAGS = [
+// ---------- BLOCO ----------
+{n:'address',t:'b',d:'Informação de contacto do autor ou do proprietário da página. Normalmente aparece em itálico.',
+ c:`<address>\n  Escrito por José<br>\n  Rua Exemplo, 123<br>\n  <a href="mailto:jose@exemplo.pt">jose@exemplo.pt</a>\n</address>`},
+{n:'article',t:'b',d:'Conteúdo independente e autónomo (artigo de blogue, notícia, comentário) que faria sentido isolado.',
+ c:`<article>\n  <h2>Título do artigo</h2>\n  <p>Este conteúdo faz sentido por si só.</p>\n</article>`},
+{n:'aside',t:'b',d:'Conteúdo à parte, relacionado com o principal mas não essencial (barra lateral, notas).',
+ c:`<p>O Porto é uma cidade a norte de Portugal.</p>\n<aside style="border-left:4px solid #999;padding-left:10px">\n  <h4>Curiosidade</h4>\n  <p>O rio Douro desagua no Porto.</p>\n</aside>`},
+{n:'blockquote',t:'b',d:'Citação longa de outra fonte. O navegador costuma indentá-la. Usa o atributo <code class="k">cite</code> para a fonte.',
+ c:`<blockquote cite="https://exemplo.pt">\n  A simplicidade é a sofisticação máxima.\n</blockquote>`},
+{n:'canvas',t:'b',d:'Área de desenho controlada por JavaScript (gráficos, jogos, animações).',
+ c:`<canvas id="c" width="200" height="100" style="border:1px solid #888"></canvas>\n<script>\n  const ctx = document.getElementById('c').getContext('2d');\n  ctx.fillStyle = 'tomato';\n  ctx.fillRect(20, 20, 100, 50);\n<\/script>`},
+{n:'dd',t:'b',d:'Descrição de um termo dentro de uma lista de descrições (<code class="k">&lt;dl&gt;</code>).',
+ c:`<dl>\n  <dt>HTML</dt>\n  <dd>Linguagem de marcação para páginas web.</dd>\n</dl>`},
+{n:'div',t:'b',d:'Contentor genérico de bloco, sem significado próprio. Serve para agrupar elementos e aplicar CSS/JS.',
+ c:`<div style="background:#fde68a;padding:12px;border-radius:8px">\n  <h3>Dentro de um div</h3>\n  <p>O div agrupa tudo isto.</p>\n</div>`},
+{n:'dl',t:'b',d:'Lista de descrições: pares termo (<code class="k">dt</code>) e descrição (<code class="k">dd</code>).',
+ c:`<dl>\n  <dt>CSS</dt><dd>Estilos da página.</dd>\n  <dt>JS</dt><dd>Comportamento da página.</dd>\n</dl>`},
+{n:'dt',t:'b',d:'Termo a definir numa lista de descrições.',
+ c:`<dl>\n  <dt>Café</dt>\n  <dd>Bebida quente feita de grãos torrados.</dd>\n</dl>`},
+{n:'fieldset',t:'b',d:'Agrupa campos relacionados de um formulário, desenhando uma caixa à volta. Combina com <code class="k">legend</code>.',
+ c:`<form>\n  <fieldset>\n    <legend>Dados pessoais</legend>\n    <label>Nome: <input type="text"></label><br><br>\n    <label>NIF: <input type="text"></label>\n  </fieldset>\n</form>`},
+{n:'figcaption',t:'b',d:'Legenda de um elemento <code class="k">figure</code>.',
+ c:`<figure>\n  <img src="${svg}" alt="Exemplo">\n  <figcaption>Figura 1 – Uma imagem de exemplo.</figcaption>\n</figure>`},
+{n:'figure',t:'b',d:'Conteúdo autónomo (imagem, diagrama, código) normalmente com legenda.',
+ c:`<figure>\n  <img src="${svg}" alt="Exemplo">\n  <figcaption>Legenda da figura</figcaption>\n</figure>`},
+{n:'footer',t:'b',d:'Rodapé de uma página ou secção: autor, direitos, ligações.',
+ c:`<footer style="border-top:1px solid #aaa;padding-top:8px;color:#555">\n  <p>© 2026 José – Todos os direitos reservados</p>\n</footer>`},
+{n:'form',t:'b',d:'Formulário para recolher dados do utilizador e enviá-los (<code class="k">action</code> e <code class="k">method</code>).',
+ c:`<form onsubmit="event.preventDefault(); alert('Enviado: ' + this.nome.value)">\n  <label>Nome: <input name="nome" type="text"></label>\n  <button type="submit">Enviar</button>\n</form>`},
+{n:'h1-h6',t:'b',d:'Títulos em seis níveis: <code class="k">h1</code> é o mais importante, <code class="k">h6</code> o menos. Usa-os pela estrutura, não pelo tamanho.',
+ c:`<h1>Título 1</h1>\n<h2>Título 2</h2>\n<h3>Título 3</h3>\n<h4>Título 4</h4>\n<h5>Título 5</h5>\n<h6>Título 6</h6>`},
+{n:'header',t:'b',d:'Cabeçalho de uma página ou secção: título, logótipo, navegação.',
+ c:`<header style="background:#2563eb;color:#fff;padding:12px;border-radius:8px">\n  <h1 style="margin:0">O Meu Site</h1>\n  <p style="margin:0">Bem-vindo!</p>\n</header>`},
+{n:'hr',t:'b',d:'Linha horizontal que marca uma mudança de tema. Não tem tag de fecho.',
+ c:`<p>Primeiro assunto.</p>\n<hr>\n<p>Segundo assunto.</p>`},
+{n:'li',t:'b',d:'Item de uma lista (<code class="k">ul</code> ou <code class="k">ol</code>).',
+ c:`<ul>\n  <li>Maçã</li>\n  <li>Pera</li>\n  <li>Uva</li>\n</ul>`},
+{n:'main',t:'b',d:'Conteúdo principal da página. Deve existir apenas um por página.',
+ c:`<main>\n  <h1>Conteúdo principal</h1>\n  <p>O que é central nesta página.</p>\n</main>`},
+{n:'nav',t:'b',d:'Bloco de ligações de navegação (menus).',
+ c:`<nav>\n  <a href="#">Início</a> |\n  <a href="#">Sobre</a> |\n  <a href="#">Contactos</a>\n</nav>`},
+{n:'noscript',t:'b',d:'Conteúdo mostrado só se o JavaScript estiver desativado. (Aqui o JS está ativo, por isso não vais ver nada.)',
+ c:`<script>document.write('JavaScript ativo!')<\/script>\n<noscript>O JavaScript está desativado.</noscript>`},
+{n:'ol',t:'b',d:'Lista ordenada (numerada). Aceita <code class="k">type</code> e <code class="k">start</code>.',
+ c:`<ol>\n  <li>Primeiro</li>\n  <li>Segundo</li>\n  <li>Terceiro</li>\n</ol>\n<ol type="A" start="3">\n  <li>Começa em C</li>\n  <li>Depois D</li>\n</ol>`},
+{n:'p',t:'b',d:'Parágrafo de texto. O navegador adiciona espaço antes e depois.',
+ c:`<p>Este é o primeiro parágrafo.</p>\n<p>Este é o segundo parágrafo.</p>`},
+{n:'pre',t:'b',d:'Texto pré-formatado: mantém espaços e quebras de linha, em fonte monoespaçada.',
+ c:`<pre>\n  linha 1\n     linha 2 (indentada)\n        linha 3\n</pre>`},
+{n:'section',t:'b',d:'Secção temática de um documento, normalmente com um título.',
+ c:`<section>\n  <h2>Secção A</h2>\n  <p>Conteúdo da secção A.</p>\n</section>\n<section>\n  <h2>Secção B</h2>\n  <p>Conteúdo da secção B.</p>\n</section>`},
+{n:'table',t:'b',d:'Tabela de dados com linhas (<code class="k">tr</code>), cabeçalhos (<code class="k">th</code>) e células (<code class="k">td</code>).',
+ c:`<table border="1" cellpadding="6" style="border-collapse:collapse">\n  <thead><tr><th>Produto</th><th>Preço</th></tr></thead>\n  <tbody>\n    <tr><td>Caneta</td><td>1,20 €</td></tr>\n    <tr><td>Caderno</td><td>3,50 €</td></tr>\n  </tbody>\n</table>`},
+{n:'tfoot',t:'b',d:'Linhas de rodapé de uma tabela (totais, resumos).',
+ c:`<table border="1" cellpadding="6" style="border-collapse:collapse">\n  <tr><th>Item</th><th>Valor</th></tr>\n  <tr><td>A</td><td>10 €</td></tr>\n  <tr><td>B</td><td>15 €</td></tr>\n  <tfoot><tr><td>Total</td><td>25 €</td></tr></tfoot>\n</table>`},
+{n:'ul',t:'b',d:'Lista não ordenada (com marcadores).',
+ c:`<ul>\n  <li>Café</li>\n  <li>Chá</li>\n  <li>Água</li>\n</ul>`},
+{n:'video',t:'b',d:'Reproduz vídeo. Usa <code class="k">controls</code> para mostrar os botões e <code class="k">&lt;source&gt;</code> para o ficheiro. O texto interior é alternativa.',
+ c:`<video width="300" controls>\n  <source src="video.mp4" type="video/mp4">\n  O teu navegador não suporta vídeo (ou falta o ficheiro video.mp4).\n</video>`},
+
+// ---------- INLINE ----------
+{n:'a',t:'i',d:'Hiperligação para outra página, ficheiro ou local da mesma página, através de <code class="k">href</code>.',
+ c:`<p>Visita o <a href="https://www.w3schools.com" target="_blank">W3Schools</a>.</p>`},
+{n:'abbr',t:'i',d:'Abreviatura ou sigla. O <code class="k">title</code> mostra o significado ao passar o rato.',
+ c:`<p>O <abbr title="Imposto sobre o Rendimento das Pessoas Singulares">IRS</abbr> entrega-se online.</p>`},
+{n:'acronym',t:'i',old:1,d:'<b>Obsoleto</b> – usa <code class="k">abbr</code> no lugar.',
+ c:`<p>A <acronym title="World Wide Web">WWW</acronym> mudou o mundo.</p>`},
+{n:'b',t:'i',d:'Texto a negrito, sem dar importância extra (para isso usa <code class="k">strong</code>).',
+ c:`<p>Isto é <b>negrito</b> num texto normal.</p>`},
+{n:'bdo',t:'i',d:'Substitui a direção do texto (<code class="k">dir="rtl"</code> ou <code class="k">ltr</code>).',
+ c:`<p><bdo dir="rtl">Este texto aparece ao contrário</bdo></p>`},
+{n:'big',t:'i',old:1,d:'<b>Obsoleto</b> – usa CSS (<code class="k">font-size</code>).',
+ c:`<p>Texto normal e <big>texto grande</big>.</p>`},
+{n:'br',t:'i',d:'Quebra de linha. Não tem tag de fecho.',
+ c:`<p>Linha 1<br>Linha 2<br>Linha 3</p>`},
+{n:'button',t:'i',d:'Botão clicável. Combina bem com JavaScript através de <code class="k">onclick</code>.',
+ c:`<button onclick="alert('Clicaste!')">Clica aqui</button>`},
+{n:'cite',t:'i',d:'Título de uma obra (livro, filme, quadro). O navegador usa itálico.',
+ c:`<p>Li <cite>Os Lusíadas</cite> na escola.</p>`},
+{n:'code',t:'i',d:'Fragmento de código de computador, em fonte monoespaçada.',
+ c:`<p>Usa a função <code>print("olá")</code> em Python.</p>`},
+{n:'dfn',t:'i',d:'Marca o termo que está a ser definido.',
+ c:`<p><dfn>HTML</dfn> é a linguagem de marcação das páginas web.</p>`},
+{n:'em',t:'i',d:'Texto com ênfase (itálico). Tem significado semântico, ao contrário de <code class="k">i</code>.',
+ c:`<p>Eu <em>mesmo</em> fiz isto!</p>`},
+{n:'i',t:'i',d:'Texto numa voz alternativa (itálico): termos técnicos, expressões estrangeiras.',
+ c:`<p>A palavra <i>software</i> vem do inglês.</p>`},
+{n:'img',t:'i',d:'Insere uma imagem. Obrigatório: <code class="k">src</code> (origem) e <code class="k">alt</code> (texto alternativo). Sem tag de fecho.',
+ c:`<img src="${svg}" alt="Retângulo azul com um círculo amarelo" width="200">`},
+{n:'input',t:'i',d:'Campo de entrada de formulário. O <code class="k">type</code> define o tipo: text, number, date, checkbox, color, range…',
+ c:`<p>Texto: <input type="text" placeholder="escreve aqui"></p>\n<p>Número: <input type="number" min="0" max="10"></p>\n<p>Data: <input type="date"></p>\n<p>Cor: <input type="color"></p>\n<p>Intervalo: <input type="range"></p>\n<p><input type="checkbox" id="a"> <label for="a">Aceito</label></p>`},
+{n:'kbd',t:'i',d:'Entrada de teclado: teclas que o utilizador deve premir.',
+ c:`<p>Prime <kbd>Ctrl</kbd> + <kbd>C</kbd> para copiar.</p>`},
+{n:'label',t:'i',d:'Etiqueta de um campo. Ao clicar na etiqueta, o campo associado (via <code class="k">for</code> + <code class="k">id</code>) fica ativo.',
+ c:`<label for="nome">Nome:</label>\n<input type="text" id="nome">\n<br><br>\n<input type="checkbox" id="x"><label for="x">Clica aqui para marcar</label>`},
+{n:'map',t:'i',d:'Mapa de imagem com zonas clicáveis (<code class="k">area</code>), ligado a uma <code class="k">img</code> por <code class="k">usemap</code>.',
+ c:`<img src="${svg}" usemap="#m" alt="mapa" width="240">\n<map name="m">\n  <area shape="circle" coords="120,80,44" href="javascript:alert('Círculo!')" alt="círculo">\n  <area shape="rect" coords="0,0,50,50" href="javascript:alert('Canto!')" alt="canto">\n</map>`},
+{n:'object',t:'i',d:'Incorpora um recurso externo (imagem, PDF, página). Hoje é mais comum usar <code class="k">img</code>, <code class="k">video</code> ou <code class="k">iframe</code>.',
+ c:`<object data="${svg}" type="image/svg+xml" width="200" height="130"></object>`},
+{n:'output',t:'i',d:'Mostra o resultado de um cálculo feito por script ou formulário.',
+ c:`<form oninput="r.value = parseInt(a.value) + parseInt(b.value)">\n  <input type="number" id="a" value="2"> +\n  <input type="number" id="b" value="3"> =\n  <output name="r" for="a b">5</output>\n</form>`},
+{n:'q',t:'i',d:'Citação curta inline. O navegador acrescenta as aspas automaticamente.',
+ c:`<p>Ele disse: <q>Vamos começar já!</q></p>`},
+{n:'samp',t:'i',d:'Exemplo de saída de um programa.',
+ c:`<p>O programa respondeu: <samp>Erro 404: ficheiro não encontrado</samp></p>`},
+{n:'script',t:'i',d:'Incorpora ou liga código JavaScript.',
+ c:`<p id="msg">Antes do script</p>\n<script>\n  document.getElementById('msg').textContent = 'O JavaScript alterou este texto!';\n<\/script>`},
+{n:'select',t:'i',d:'Lista pendente (dropdown), com opções definidas em <code class="k">option</code>.',
+ c:`<select onchange="alert('Escolheste: ' + this.value)">\n  <option value="Porto">Porto</option>\n  <option value="Lisboa">Lisboa</option>\n  <option value="Faro">Faro</option>\n</select>`},
+{n:'small',t:'i',d:'Texto mais pequeno: notas, avisos legais, letras pequenas.',
+ c:`<p>Preço: 10 € <small>(IVA incluído)</small></p>`},
+{n:'span',t:'i',d:'Contentor genérico inline, sem significado próprio. Ideal para estilizar parte de um texto.',
+ c:`<p>Este texto tem uma <span style="color:red;font-weight:bold">palavra destacada</span>.</p>`},
+{n:'strong',t:'i',d:'Texto de grande importância (negrito).',
+ c:`<p><strong>Atenção:</strong> guarda o ficheiro antes de sair.</p>`},
+{n:'sub',t:'i',d:'Texto subscrito (abaixo da linha).',
+ c:`<p>A fórmula da água é H<sub>2</sub>O.</p>`},
+{n:'sup',t:'i',d:'Texto sobrescrito (acima da linha).',
+ c:`<p>E = mc<sup>2</sup> e 1.º lugar.</p>`},
+{n:'textarea',t:'i',d:'Caixa de texto de várias linhas. Define o tamanho com <code class="k">rows</code> e <code class="k">cols</code>.',
+ c:`<textarea rows="4" cols="30">Escreve aqui o teu texto…</textarea>`},
+{n:'time',t:'i',d:'Data ou hora legível por máquinas através de <code class="k">datetime</code>.',
+ c:`<p>A reunião é às <time datetime="15:30">15h30</time> de <time datetime="2026-10-19">19 de outubro</time>.</p>`},
+{n:'tt',t:'i',old:1,d:'<b>Obsoleto</b> – usa <code class="k">code</code> ou <code class="k">kbd</code>.',
+ c:`<p>Texto <tt>teletipo</tt> antigo.</p>`},
+{n:'var',t:'i',d:'Variável (matemática ou de programação).',
+ c:`<p>A área é <var>l</var> × <var>a</var>.</p>`},
+];
+
+const listEl = document.getElementById('list');
+const mainEl = document.getElementById('main');
+const q = document.getElementById('q');
+let filter = 'all', current = null;
+
+function renderList(){
+  const term = q.value.trim().toLowerCase();
+  listEl.innerHTML = '';
+  TAGS.filter(x => (filter==='all' || (filter==='block'?x.t==='b':x.t==='i')) && x.n.includes(term))
+    .forEach(x => {
+      const b = document.createElement('button');
+      b.className = 'tag ' + (x.t==='b'?'block':'inline') + (x.old?' obsolete':'') + (current===x.n?' active':'');
+      b.textContent = '<' + x.n + '>';
+      b.onclick = () => show(x.n);
+      listEl.appendChild(b);
+    });
+  if(!listEl.children.length) listEl.innerHTML = '<p style="color:var(--muted);padding:8px">Nada encontrado.</p>';
+}
+
+function show(name){
+  current = name;
+  const x = TAGS.find(t => t.n === name);
+  const kind = x.t==='b' ? '<span class="badge block">bloco</span>' : '<span class="badge inline">inline</span>';
+  const old = x.old ? '<span class="badge old">obsoleto</span>' : '';
+  mainEl.innerHTML = `
+    <div class="card">
+      <h2>&lt;${x.n}&gt;${kind}${old}</h2>
+      <p>${x.d}</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="row"><h3>Código (editável)</h3><button class="reset" id="rst">Repor exemplo</button></div>
+        <textarea id="code" spellcheck="false"></textarea>
+      </div>
+      <div class="card">
+        <div class="row"><h3>Resultado</h3></div>
+        <iframe id="out" sandbox="allow-scripts"></iframe>
+      </div>
+    </div>`;
+  const ta = document.getElementById('code'), fr = document.getElementById('out');
+  const run = () => { fr.srcdoc = '<!DOCTYPE html><meta charset="utf-8"><body style="font-family:system-ui;margin:12px">' + ta.value; };
+  ta.value = x.c;
+  ta.addEventListener('input', run);
+  ta.addEventListener('keydown', e => {
+    if(e.key==='Tab'){ e.preventDefault(); const s=ta.selectionStart; ta.setRangeText('  ',s,ta.selectionEnd,'end'); run(); }
+  });
+  document.getElementById('rst').onclick = () => { ta.value = x.c; run(); };
+  run();
+  renderList();
+  mainEl.scrollTop = 0;
+}
+
+q.addEventListener('input', renderList);
+document.querySelectorAll('.filters button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.filters button').forEach(o => o.classList.remove('on'));
+  b.classList.add('on'); filter = b.dataset.f; renderList();
+});
+renderList();
+</script>
+</body>
+</html>
